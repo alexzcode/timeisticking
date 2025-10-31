@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Image Notification Demo</title>
+</head>
+<body>
+  <h2>Image Notification Demo</h2>
+  <p>Click "Allow" when asked for notification permission.</p>
+
+  <script>
+    // Request permission on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      if (Notification.permission !== "granted") {
+        Notification.requestPermission();
+      }
+    });
+
+    // Function to send a notification with only an image
+    function sendImageNotification() {
+      if (Notification.permission === "granted") {
+        new Notification("", {
+          icon: "https://placekitten.com/300/200", // replace with your image URL
+          image: "https://placekitten.com/300/200", // optional for some browsers
+          silent: true // no sound
+        });
+      }
+    }
+
+    // Send a notification every 5 seconds
+    setInterval(sendImageNotification, 5000);
+  </script>
+</body>
+</html>
