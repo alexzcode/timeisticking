@@ -1,15 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>time is ticking demo</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Focus Reminder Calendar</title>
+<style>
+  body {
+    font-family: sans-serif;
+    max-width: 700px;
+    margin: 20px auto;
+    padding: 20px;
+    background: linear-gradient(135deg, #0b1d3a, #004d5a);
+    border-radius: 12px;
+    color: #eee;
+  }
+  h1 { text-align: center; color: #fff; }
+  input, button {
+    padding: 8px;
+    margin: 5px 0;
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 6px;
+    border: none;
+  }
+  input { background: rgba(255,255,255,0.1); color: #fff; }
+  button { background: rgba(255,255,255,0.2); color: #fff; cursor: pointer; }
+  button:hover { background: rgba(255,255,255,0.3); }
+  .month-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 15px 0;
+  }
+  .month-nav button { padding: 5px 10px; }
+  .calendar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    background: rgba(255,255,255,0.05);
+    padding: 10px;
+    border-radius: 10px;
+  }
+  .day-header {
+    text-align: center;
+    font-weight: bold;
+    color: #ccc;
+    padding: 5px;
+  }
+  .day {
+    min-height: 80px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 8px;
+    padding: 4px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .day:hover { background: rgba(255,255,255,0.1); }
+  .day-num { font-size: 0.9em; font-weight: bold; }
+  .assignment-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin: 1px; }
+  .soon { background: orange; }
+  .urgent { background: red; }
+  .done { background: gray; }
+  #details { margin-top: 20px; background: rgba(255,255,255,0.05); border-radius: 8px; padding: 10px; }
+  .assignment-detail { display: flex; justify-content: space-between; margin-bottom: 5px; }
+</style>
 </head>
 <body>
-  <h2>time is ticking demo</h2>
-  <p>allow notif perms to enable</p>
-  <h3>- changed icon</h3>
+  <h1>reminder</h1>
+  <input id="title" type="text" placeholder="Assignment title" />
+  <input id="date" type="date" />
+  <button id="addBtn">add</button>
+
+  <div class="month-nav">
+    <button id="prevMonth"><<</button>
+    <div id="monthLabel"></div>
+    <button id="nextMonth">>></button>
+  </div>
+
+  <div id="calendar" class="calendar"></div>
+  <div id="details"></div>
 
   <script>
+    const calendar = document.getElementById('calendar');
+    const details = document.getElementById('details');
+    const addBtn = document.getElementById('addBtn');
+    const monthLabel = document.getElementById('monthLabel');
+    const prevMonthBtn = document.getElementById('prevMonth');
+    const nextMonthBtn = document.getElementById('nextMonth');
+
+    let assignments = JSON.parse(localStorage.getItem('assignments') || '[]');
+    let viewYear = new Date().getFullYear();
+    let viewMonth = new Date().getMonth();
+
     const messages = [
       "hurry up.",
       "snap out of it.",
@@ -20,22 +103,84 @@
       "go do your priorities.",
       "you'll regret every second you waste later."
     ];
-    
-    function notify() {
-      const msg = messages[Math.floor(Math.random() * messages.length)];
-      new Notification("hey.", {
-        body: msg,
-        icon: "https://preview.redd.it/alice-in-wonderland-white-rabbit-pointing-at-clock-v0-j15k488ms4xf1.png?width=640&crop=smart&auto=webp&s=053d5d843d21e7c110bda368bab68e8b905c52b7"
-      });
-    }
-    
-    if (Notification.permission !== "granted") {
+
+    if (Notification.permission !== 'granted') {
       Notification.requestPermission();
     }
-    
-    // every 10 seconds
-    setInterval(notify, 10000);
 
+    function save() { localStorage.setItem('assignments', JSON.stringify(assignments)); }
+
+    function renderCalendar() {
+      calendar.innerHTML = '';
+      const year = viewYear, month = viewMonth;
+      const now = new Date();
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const startDay = firstDay.getDay();
+      const monthNames = ['jan.','feb.','mar.','apr.','may.','jun.','jul.','aug.','sep.','oct.','nov.','dec.'];
+      monthLabel.textContent = `${monthNames[month]} ${year}`;
+
+      ['S','M','T','W','T','F','S'].forEach(d=>{
+        const header = document.createElement('div'); header.className='day-header'; header.textContent=d; calendar.appendChild(header);
+      });
+      for(let i=0;i<startDay;i++){calendar.appendChild(document.createElement('div'));}
+      for(let d=1;d<=lastDay.getDate();d++){
+        const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const dayDiv=document.createElement('div'); dayDiv.className='day'; dayDiv.innerHTML=`<div class='day-num'>${d}</div>`;
+        const dayAssignments=assignments.filter(a=>a.dueDate===dateStr);
+        dayAssignments.forEach(a=>{
+          const due=new Date(a.dueDate); const diffDays=(due-now)/(1000*60*60*24);
+          const dot=document.createElement('span'); dot.className='assignment-dot';
+          if(a.done) dot.classList.add('done');
+          else if(diffDays<2) dot.classList.add('urgent');
+          else if(diffDays<5) dot.classList.add('soon');
+          dayDiv.appendChild(dot);
+        });
+        dayDiv.onclick=()=>showDetails(dateStr);
+        calendar.appendChild(dayDiv);
+      }
+    }
+
+    function showDetails(dateStr){
+      const items=assignments.filter(a=>a.dueDate===dateStr);
+      details.innerHTML=`<h3>Assignments for ${dateStr}</h3>`;
+      if(items.length===0) details.innerHTML+='<p>nothing to do</p>';
+      items.forEach(a=>{
+        const div=document.createElement('div'); div.className='assignment-detail';
+        div.innerHTML=`<span>${a.title}</span><div><button onclick="toggleDone(${assignments.indexOf(a)})">done</button><button onclick="removeAssignment(${assignments.indexOf(a)})">abort</button></div>`;
+        details.appendChild(div);
+      });
+    }
+
+    function addAssignment(){
+      const title=document.getElementById('title').value.trim();
+      const date=document.getElementById('date').value;
+      if(!title||!date)return alert('fill both fields');
+      assignments.push({title,dueDate:date,done:false}); save(); renderCalendar();
+    }
+
+    function toggleDone(i){assignments[i].done=!assignments[i].done; save(); renderCalendar();}
+    function removeAssignment(i){assignments.splice(i,1); save(); renderCalendar(); details.innerHTML='';}
+
+    addBtn.onclick=addAssignment;
+    prevMonthBtn.onclick=()=>{viewMonth--; if(viewMonth<0){viewMonth=11; viewYear--;} renderCalendar();};
+    nextMonthBtn.onclick=()=>{viewMonth++; if(viewMonth>11){viewMonth=0; viewYear++;} renderCalendar();};
+
+    function notifyFocus(){
+      const now=new Date();
+      const dueSoon=assignments.filter(a=>{
+        const due=new Date(a.dueDate);
+        const diff=(due-now)/(1000*60*60*24);
+        return diff<2 && diff>0 && !a.done;
+      });
+      if(dueSoon.length===0) return;
+      const closest=dueSoon.reduce((prev,curr)=> new Date(prev.dueDate)<new Date(curr.dueDate)?prev:curr);
+      const msg=messages[Math.floor(Math.random()*messages.length)]+` (${closest.title})`;
+      new Notification('hey.', { body: msg, icon: 'https://preview.redd.it/alice-in-wonderland-white-rabbit-pointing-at-clock-v0-j15k488ms4xf1.png?width=640&crop=smart&auto=webp&s=053d5d843d21e7c110bda368bab68e8b905c52b7' });
+    }
+
+    setInterval(notifyFocus, 60000);
+    renderCalendar();
   </script>
 </body>
 </html>
