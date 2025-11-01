@@ -9,23 +9,29 @@
   <p>allow notif perms to enable</p>
 
   <script>
-    // Request permission on page load
-    document.addEventListener('DOMContentLoaded', () => {
-      if (Notification.permission !== "granted") {
-        Notification.requestPermission();
-      }
-    });
-
-    // Function to send a notification with only an image
-    function showNotif() {
-      new Notification("hey.", {
-        body: "time is ticking.",
-        icon: "https://preview.redd.it/alice-in-wonderland-white-rabbit-pointing-at-clock-v0-j15k488ms4xf1.png?width=640&crop=smart&auto=webp&s=053d5d843d21e7c110bda368bab68e8b905c52b7" // image URL
-      });
+    const messages = [
+      "hurry up.",
+      "snap out of it.",
+      "focus on what you need to focus on.",
+      "time is ticking.",
+      "nothing lasts forever.",
+      "do what you actually need to do.",
+      "go do your priorities.",
+      "you'll regret every second you waste later."
+    ];
+    
+    function notify() {
+      const msg = messages[Math.floor(Math.random() * messages.length)];
+      new Notification("hey.", { body: msg });
     }
+    
+    if (Notification.permission !== "granted") {
+      Notification.requestPermission();
+    }
+    
+    // every 10 seconds
+    setInterval(notify, 10000);
 
-    // Send a notification every 1 second
-    setInterval(showNotif, 1000);
   </script>
 </body>
 </html>
