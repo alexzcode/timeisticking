@@ -22,7 +22,10 @@
     
     function notify() {
       const msg = messages[Math.floor(Math.random() * messages.length)];
-      new Notification("hey.", { body: msg });
+      new Notification("hey.", {
+        body: msg
+        icon: "https://placekitten.com/100/100"
+      });
     }
     
     if (Notification.permission !== "granted") {
