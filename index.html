@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Image Notification Demo</title>
+  <title>time is ticking demo</title>
 </head>
 <body>
-  <h2>Image Notification Demo</h2>
-  <p>Click "Allow" when asked for notification permission.</p>
+  <h2>time is ticking demo</h2>
+  <p>allow notif perms to enable</p>
 
   <script>
     // Request permission on page load
@@ -17,18 +17,15 @@
     });
 
     // Function to send a notification with only an image
-    function sendImageNotification() {
-      if (Notification.permission === "granted") {
-        new Notification("", {
-          icon: "https://placekitten.com/300/200", // replace with your image URL
-          image: "https://placekitten.com/300/200", // optional for some browsers
-          silent: true // no sound
-        });
-      }
+    function showNotif() {
+      new Notification("hey.", {
+        body: "time is ticking.",
+        icon: "https://preview.redd.it/alice-in-wonderland-white-rabbit-pointing-at-clock-v0-j15k488ms4xf1.png?width=640&crop=smart&auto=webp&s=053d5d843d21e7c110bda368bab68e8b905c52b7" // image URL
+      });
     }
 
     // Send a notification every 5 seconds
-    setInterval(sendImageNotification, 5000);
+    setInterval(showNotif, 5000);
   </script>
 </body>
 </html>
